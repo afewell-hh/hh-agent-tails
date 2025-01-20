@@ -1,73 +1,60 @@
-# HH Agent Tails
+---
+title: HH Agent Tails
+emoji: 🦔
+colorFrom: indigo
+colorTo: purple
+sdk: gradio
+sdk_version: "4.14.0"
+app_file: hh_agent_tails/app.py
+pinned: false
+---
 
-[![Sync to Hugging Face hub](https://github.com/afewell-hh/hh-agent-tails/actions/workflows/deploy.yml/badge.svg)](https://github.com/afewell-hh/hh-agent-tails/actions/workflows/deploy.yml)
+# HH Agent Tails - Hedgehog Documentation Assistant
 
-A powerful RAG (Retrieval-Augmented Generation) system built with FastAPI, Gradio, and ChromaDB. Try it on [Hugging Face Spaces](https://huggingface.co/spaces/afewell/hh-agent-tails)!
+HH Agent Tails is an AI-powered documentation assistant for the Hedgehog Open Network Fabric project. It uses advanced RAG (Retrieval-Augmented Generation) techniques to provide accurate answers about Hedgehog's features, capabilities, and supported devices.
 
 ## Features
 
-- **Chat Interface**: Interactive chat with context-aware responses and session tracking
-- **Document Management**: Dynamic collection management supporting multiple document formats
-- **GPT-Crawler Integration**: Use gpt-crawler for web scraping with accurate citations
-- **Advanced RAG Implementation**: Multi-query retrieval, intelligent chunking, result ranking, and source attribution
-- **Analytics and Logging**: Conversation logging to Supabase with detailed session tracking
+- **Smart Document Search**: Uses vector similarity search with Supabase pgvector to find relevant documentation
+- **Context-Aware Responses**: Provides answers based on official Hedgehog documentation with source citations
+- **User-Friendly Interface**: Simple chat interface built with Gradio
+- **Production Ready**: Deployed on Hugging Face Spaces with read-only mode for safe public access
 
-## Installation
+## Technical Details
 
-1. Clone the repository:
-```bash
-git clone https://github.com/afewell-hh/hh-agent-tails.git
-cd hh-agent-tails
-```
-
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+- **Vector Store**: Supabase with pgvector extension for efficient similarity search
+- **Embeddings**: OpenAI embeddings for document vectorization
+- **LLM**: GPT-3.5-turbo for natural language understanding and response generation
+- **Document Processing**: Handles JSON documentation with 1500-token chunks and 300-token overlap
+- **Backend**: FastAPI for robust API endpoints
+- **Frontend**: Gradio for the chat interface
 
 ## Usage
 
-1. Start the application:
+Simply type your questions about Hedgehog in the chat interface. The assistant will search through the documentation and provide relevant answers with citations to source documents.
+
+Example questions:
+- "What leaf switches does Hedgehog support?"
+- "Does Hedgehog support the Edgecore DCS203?"
+- "How does Hedgehog handle multi-tenancy?"
+
+## Development
+
+To run locally in development mode:
 ```bash
-uvicorn hh_agent_tails.app:app --reload
+# Set up environment
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Run in development mode
+ADMIN_MODE=true APP_ENV=development .venv/bin/python -m uvicorn hh_agent_tails.app:app --reload
 ```
-
-2. Open your browser and navigate to:
-- Gradio Interface: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
-
-## Document Collections
-
-1. Create a new collection through the interface
-2. Upload documents (supports JSON, TXT)
-3. Start chatting with context from your documents
 
 ## Deployment
 
-### Local Development
-1. Set environment variables in `.env`
-2. Run with `uvicorn` as shown above
-
-### Hugging Face Spaces
-1. Fork this repository
-2. Create a new Space on Hugging Face
-3. Connect your GitHub repository
-4. Add required secrets (OPENAI_API_KEY, SUPABASE_URL, SUPABASE_KEY)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+The app automatically deploys to Hugging Face Spaces when changes are pushed to the main branch. In production, the app runs in read-only mode for security.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details
+This project is part of the Hedgehog Open Network Fabric ecosystem and follows its licensing terms.
