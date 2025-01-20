@@ -1,13 +1,16 @@
+# Create the interface
+interface = create_interface()
+
 # Mount Gradio app to FastAPI
+app = FastAPI()
 app = gr.mount_gradio_app(app, interface, path="/")
 
-# Create the interface
-demo = create_interface()
-
-# For Hugging Face Spaces, we need to expose the demo interface
+# For Hugging Face Spaces
 if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        share=False
+    import uvicorn
+    uvicorn.run(
+        "hh_agent_tails.app:app",  # Use module path format
+        host="0.0.0.0",
+        port=7860,
+        reload=False
     ) 
