@@ -836,15 +836,21 @@ def create_interface():
                 height=600,
                 show_copy_button=True
             )
-            msg = gr.Textbox(
-                label="Ask a question about Hedgehog",
-                placeholder="Type your question here...",
-                lines=2
-            )
+            with gr.Row():
+                msg = gr.Textbox(
+                    label="Ask a question about Hedgehog",
+                    placeholder="Type your question here and press Enter or click Submit",
+                    lines=2,
+                    show_label=True,
+                    container=True,
+                    scale=8
+                )
+                submit_btn = gr.Button("Submit", scale=1)
             clear = gr.Button("Clear")
             
             # Set up chat handlers
-            msg.submit(process_chat, [msg, chatbot], [msg, chatbot])
+            submit_btn.click(process_chat, [msg, chatbot], [msg, chatbot])
+            msg.submit(process_chat, [msg, chatbot], [msg, chatbot])  # Enable Enter key submission
             clear.click(lambda: ([], []), None, [chatbot, msg])
         
         if is_admin_mode:
@@ -860,23 +866,11 @@ def create_interface():
                     create_btn = gr.Button("Create Collection")
                 create_btn.click(create_collection_ui, collection_name, collection_name)
                 
-                # File upload
-                with gr.Row():
-                    upload_collection = gr.Dropdown(
-                        choices=list_collections_for_dropdown()[0],
-                        label="Select Collection for Upload",
-                        interactive=True
-                    )
-                    file_upload = gr.File(
-                        label="Upload JSON Files",
-                        file_count="multiple"
-                    )
-                upload_btn = gr.Button("Upload Files")
-                upload_output = gr.Textbox(label="Upload Status")
-                upload_btn.click(
-                    upload_file,
-                    inputs=[file_upload, upload_collection],
-                    outputs=upload_output
+                # Display existing collections
+                collections_table = gr.Dataframe(
+                    headers=["Collection Name"],
+                    label="Existing Collections",
+                    interactive=False
                 )
                 
                 # Collection management
@@ -888,17 +882,49 @@ def create_interface():
                     )
                     clear_btn = gr.Button("Clear Collection")
                     delete_btn = gr.Button("Delete Collection")
-                manage_output = gr.Textbox(label="Management Status")
-                clear_btn.click(clear_collection_ui, manage_collection, manage_output)
-                delete_btn.click(delete_collection_ui, manage_collection, manage_output)
                 
-                # Refresh dropdowns when collections change
-                def refresh_dropdowns():
+                # File upload
+                with gr.Row():
+                    upload_collection = gr.Dropdown(
+                        choices=list_collections_for_dropdown()[0],
+                        label="Select Collection for Upload",
+                        interactive=True
+                    )
+                    file_upload = gr.File(
+                        label="Upload JSON Files",
+                        file_count="multiple"
+                    )
+                
+                upload_btn = gr.Button("Upload Files")
+                upload_output = gr.Textbox(label="Upload Status")
+                
+                # Update collections table function
+                def update_collections_table():
                     collections = list_collections_for_dropdown()[0]
-                    return gr.Dropdown.update(choices=collections), gr.Dropdown.update(choices=collections)
+                    return [[c] for c in collections]
                 
-                create_btn.click(refresh_dropdowns, None, [upload_collection, manage_collection])
-                delete_btn.click(refresh_dropdowns, None, [upload_collection, manage_collection])
+                # Refresh dropdowns and table when collections change
+                def refresh_all():
+                    collections = list_collections_for_dropdown()[0]
+                    return {
+                        upload_collection: gr.update(choices=collections),
+                        manage_collection: gr.update(choices=collections),
+                        collections_table: [[c] for c in collections]
+                    }
+                
+                # Set up event handlers
+                create_btn.click(refresh_all, None, [upload_collection, manage_collection, collections_table])
+                delete_btn.click(refresh_all, None, [upload_collection, manage_collection, collections_table])
+                clear_btn.click(clear_collection_ui, manage_collection, upload_output)
+                delete_btn.click(delete_collection_ui, manage_collection, upload_output)
+                upload_btn.click(
+                    upload_file,
+                    inputs=[file_upload, upload_collection],
+                    outputs=upload_output
+                )
+                
+                # Initial population of collections table
+                collections_table.value = update_collections_table()
         
         gr.Markdown("""
         ### About
