@@ -1,0 +1,11 @@
+langchain-openai
+langchain-community
+langchain
+langchain-core
+python-dotenv
+gradio
+fastapi
+uvicorn
+chromadb
+pydantic
+langchain-chroma 
