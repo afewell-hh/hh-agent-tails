@@ -821,6 +821,93 @@ def get_relevant_history(input_text: str) -> str:
     
     return "\n\n".join(context_parts)
 
+def create_interface():
+    """Create the Gradio interface with chat and collection management."""
+    
+    # Create blocks
+    with gr.Blocks(title="Hedgehog Documentation Assistant") as interface:
+        gr.Markdown("# Hedgehog Documentation Assistant")
+        
+        with gr.Tab("Chat"):
+            chatbot = gr.Chatbot(
+                [],
+                elem_id="chatbot",
+                bubble_full_width=False,
+                height=600,
+                show_copy_button=True
+            )
+            msg = gr.Textbox(
+                label="Ask a question about Hedgehog",
+                placeholder="Type your question here...",
+                lines=2
+            )
+            clear = gr.Button("Clear")
+            
+            # Set up chat handlers
+            msg.submit(process_chat, [msg, chatbot], [msg, chatbot])
+            clear.click(lambda: ([], []), None, [chatbot, msg])
+        
+        if is_admin_mode:
+            with gr.Tab("Collection Management"):
+                gr.Markdown("## Collection Management")
+                
+                # Collection creation
+                with gr.Row():
+                    collection_name = gr.Textbox(
+                        label="Collection Name",
+                        placeholder="Enter collection name..."
+                    )
+                    create_btn = gr.Button("Create Collection")
+                create_btn.click(create_collection_ui, collection_name, collection_name)
+                
+                # File upload
+                with gr.Row():
+                    upload_collection = gr.Dropdown(
+                        choices=list_collections_for_dropdown()[0],
+                        label="Select Collection for Upload",
+                        interactive=True
+                    )
+                    file_upload = gr.File(
+                        label="Upload JSON Files",
+                        file_count="multiple"
+                    )
+                upload_btn = gr.Button("Upload Files")
+                upload_output = gr.Textbox(label="Upload Status")
+                upload_btn.click(
+                    upload_file,
+                    inputs=[file_upload, upload_collection],
+                    outputs=upload_output
+                )
+                
+                # Collection management
+                with gr.Row():
+                    manage_collection = gr.Dropdown(
+                        choices=list_collections_for_dropdown()[0],
+                        label="Select Collection to Manage",
+                        interactive=True
+                    )
+                    clear_btn = gr.Button("Clear Collection")
+                    delete_btn = gr.Button("Delete Collection")
+                manage_output = gr.Textbox(label="Management Status")
+                clear_btn.click(clear_collection_ui, manage_collection, manage_output)
+                delete_btn.click(delete_collection_ui, manage_collection, manage_output)
+                
+                # Refresh dropdowns when collections change
+                def refresh_dropdowns():
+                    collections = list_collections_for_dropdown()[0]
+                    return gr.Dropdown.update(choices=collections), gr.Dropdown.update(choices=collections)
+                
+                create_btn.click(refresh_dropdowns, None, [upload_collection, manage_collection])
+                delete_btn.click(refresh_dropdowns, None, [upload_collection, manage_collection])
+        
+        gr.Markdown("""
+        ### About
+        This assistant helps you find information about Hedgehog Open Network Fabric.
+        Ask questions about supported devices, features, configuration, and more.
+        """)
+    
+    return interface
+
 # Create the interface
 try:
     print("[STARTUP] Creating Gradio interface...")
