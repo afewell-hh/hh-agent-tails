@@ -18,7 +18,7 @@ import uuid
 from supabase import create_client, Client
 import time
 
-from .collection_manager import CollectionManager
+from hh_agent_tails.collection_manager import CollectionManager
 
 # Create FastAPI app
 app = FastAPI(title="HH Agent Tails")
