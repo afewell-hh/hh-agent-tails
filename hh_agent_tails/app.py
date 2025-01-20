@@ -821,147 +821,44 @@ def get_relevant_history(input_text: str) -> str:
     
     return "\n\n".join(context_parts)
 
-# Create Gradio interface
-with gr.Blocks(
-    title="HH Agent Tails",
-    theme=gr.themes.Default(),
-    analytics_enabled=False
-) as interface:
-    gr.Markdown("# HH Agent Tails")
-    
-    with gr.Tabs():
-        with gr.Tab("Chat Interface"):
-            chatbot = gr.Chatbot()
-            msg = gr.Textbox(label="Message")
-            clear = gr.Button("Clear")
-
-        with gr.Tab("Document Management"):
-            if not is_admin_mode:
-                gr.Markdown("""
-                ### Read-Only Mode
-                This instance is running in read-only mode. Document management features are disabled.
-                
-                To manage document collections:
-                1. Clone the repository from GitHub
-                2. Set up your own Supabase instance
-                3. Run the application in admin mode with your Supabase credentials
-                """)
-            
-            with gr.Group():
-                gr.Markdown("### Available Collections")
-                collections_table = gr.Dataframe(
-                    headers=["Collection Name", "Document Count"],
-                    datatype=["str", "number"],
-                    label="Current Collections",
-                    row_count=(1, "dynamic"),  # Start with 1 row, grow dynamically
-                    height=100,  # Initial height
-                    wrap=True  # Allow text wrapping
-                )
-            
-            if is_admin_mode:
-                with gr.Group():
-                    gr.Markdown("### Collection Management")
-                    with gr.Row():
-                        collection_name_input = gr.Textbox(label="Collection Name")
-                        create_collection_btn = gr.Button("Create Collection", variant="primary")
-                    
-                    with gr.Row():
-                        collection_dropdown = gr.Dropdown(
-                            choices=[],
-                            label="Select Collection for Management",
-                            interactive=True
-                        )
-                        clear_collection_btn = gr.Button("Clear Collection", variant="secondary")
-                        delete_collection_btn = gr.Button("Delete Collection", variant="stop")
-                    
-                    collection_status = gr.Textbox(label="Status", interactive=False)
-                
-                with gr.Group():
-                    gr.Markdown("### Document Upload")
-                    with gr.Row():
-                        upload_collection_dropdown = gr.Dropdown(
-                            choices=[],
-                            label="Select Collection for Upload",
-                            interactive=True
-                        )
-                        file_upload = gr.File(file_count="multiple")
-                    with gr.Row():
-                        upload_btn = gr.Button("Upload Documents", variant="primary")
-                    upload_status = gr.Textbox(label="Upload Status", interactive=False)
-                    gr.Markdown("""Note: Large files may take some time to process. 
-                    Please wait for the upload status to update.""")
-
-    # Function to update collections table
-    def update_collections_table():
-        collections = collection_manager.list_collections()
-        rows = []
-        for collection in collections:
-            doc_count = collection_manager.get_collection(collection).count_documents()
-            rows.append([collection, doc_count])
-        return rows
-
-    # Function to update dropdowns
-    def update_dropdowns():
-        collections = collection_manager.list_collections()
-        return gr.Dropdown(choices=collections), gr.Dropdown(choices=collections)
-
-    # Update collections table and dropdowns on page load
-    interface.load(
-        update_collections_table,
-        outputs=[collections_table]
-    )
-    if is_admin_mode:
-        interface.load(
-            update_dropdowns,
-            outputs=[collection_dropdown, upload_collection_dropdown]
-        )
-
-    if is_admin_mode:
-        # Event handlers for admin mode
-        create_collection_btn.click(
-            create_collection_ui,
-            inputs=[collection_name_input],
-            outputs=[collection_status],
-        ).then(
-            update_collections_table,
-            outputs=[collections_table]
-        ).then(
-            update_dropdowns,
-            outputs=[collection_dropdown, upload_collection_dropdown]
-        )
-        
-        clear_collection_btn.click(
-            clear_collection_ui,
-            inputs=[collection_dropdown],
-            outputs=[collection_status]
-        ).then(
-            update_collections_table,
-            outputs=[collections_table]
-        )
-        
-        delete_collection_btn.click(
-            delete_collection_ui,
-            inputs=[collection_dropdown],
-            outputs=[collection_status]
-        ).then(
-            update_collections_table,
-            outputs=[collections_table]
-        ).then(
-            update_dropdowns,
-            outputs=[collection_dropdown, upload_collection_dropdown]
-        )
-        
-        upload_btn.click(
-            upload_file,
-            inputs=[file_upload, upload_collection_dropdown],
-            outputs=[upload_status]
-        ).then(
-            update_collections_table,
-            outputs=[collections_table]
-        )
-    
-    msg.submit(process_chat, [msg, chatbot], [msg, chatbot])
-    clear.click(lambda: None, None, chatbot, queue=False)
+# Create the interface
+try:
+    print("[STARTUP] Creating Gradio interface...")
+    interface = create_interface()
+    print("[STARTUP] Interface created successfully")
+except Exception as e:
+    print(f"[FATAL] Failed to create interface: {str(e)}")
+    import traceback
+    print(traceback.format_exc())
+    raise
 
 # Mount Gradio app to FastAPI
-app = gr.mount_gradio_app(app, interface, path="/")
+try:
+    print("[STARTUP] Creating FastAPI app...")
+    app = FastAPI()
+    print("[STARTUP] Mounting Gradio interface...")
+    app = gr.mount_gradio_app(app, interface, path="/")
+    print("[STARTUP] Gradio interface mounted successfully")
+except Exception as e:
+    print(f"[FATAL] Failed to mount Gradio app: {str(e)}")
+    import traceback
+    print(traceback.format_exc())
+    raise
+
+# For Hugging Face Spaces
+if __name__ == "__main__":
+    import uvicorn
+    print("[STARTUP] Starting uvicorn server...")
+    try:
+        uvicorn.run(
+            "hh_agent_tails.app:app",  # Use module path format
+            host="0.0.0.0",
+            port=7860,
+            reload=False,
+            log_level="debug"  # Enable debug logging
+        )
+    except Exception as e:
+        print(f"[FATAL] Failed to start server: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        raise
