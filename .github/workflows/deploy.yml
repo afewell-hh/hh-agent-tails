@@ -20,6 +20,10 @@ jobs:
           git config --global user.name "GitHub Actions"
       - name: Create clean branch
         run: |
+          # Remove ChromaDB files
+          rm -rf runtime_chroma/
+          rm -rf chroma_db/
+          # Create clean branch without binary files
           git checkout --orphan temp-clean
           git add -A
           git commit -m "Clean history deployment"
