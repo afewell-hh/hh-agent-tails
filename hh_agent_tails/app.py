@@ -35,7 +35,18 @@ app.add_middleware(
 # Load environment variables based on environment
 env = os.getenv("APP_ENV", "development")
 env_file = f".env.{env}"
-if os.getenv("ADMIN_MODE", "false").lower() == "true":
+
+# Detect if running on Hugging Face Spaces
+is_huggingface = os.getenv("SPACE_ID") is not None
+
+if is_huggingface:
+    print("Running in read-only mode (Hugging Face Spaces)")
+    # Use environment variables passed from GitHub Actions
+    required_vars = ["OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+elif os.getenv("ADMIN_MODE", "false").lower() == "true":
     load_dotenv(env_file)
 else:
     load_dotenv()  # Fallback to .env
@@ -63,9 +74,6 @@ memory = ConversationBufferMemory(
     memory_key="chat_history",
     return_messages=True,
 )
-
-# Detect if running on Hugging Face Spaces
-is_huggingface = os.getenv("SPACE_ID") is not None
 
 # Check if running in admin mode
 is_admin_mode = os.getenv("ADMIN_MODE", "false").lower() == "true"
